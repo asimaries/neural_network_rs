@@ -10,12 +10,13 @@ pub struct Network<'a> {
 }
 
 impl Network<'_> {
-    pub fn new<'a>(layers: Vec<usize>, learning_rate: f64, activation: Activation<'a>) -> Network {
+    pub fn new<'a>(layers: Vec<usize>, learning_rate: f64, activation: Activation<'a>) -> Network<'a> {
         let mut weights = vec![];
         let mut biases = vec![];
 
         for i in 0..layers.len() - 1 {
             weights.push(Matrix::random(layers[i + 1], layers[i]));
+            biases.push(Matrix::random(layers[i + 1], 1));
         }
 
         Network {
@@ -42,14 +43,14 @@ impl Network<'_> {
                 .map(self.activation.function);
             self.data.push(current.clone());
         }
-        current.data[0].to_owned()
+        current.transpose().data[0].to_owned()
     }
     pub fn back_propogate(&mut self, outputs: Vec<f64>, targets: Vec<f64>) {
         if targets.len() != self.layers[self.layers.len() - 1] {
             panic!("Invalid number of targets");
         }
-        let mut parsed = Matrix::from(vec![outputs]);
-        let mut errors = Matrix::from(vec![targets]).subtract(&parsed);
+        let parsed = Matrix::from(vec![outputs]).transpose();
+        let mut errors = Matrix::from(vec![targets]).transpose().subtract(&parsed);
         let mut gradients = parsed.map(self.activation.derivative);
 
         for i in (0..self.layers.len() - 1).rev() {
